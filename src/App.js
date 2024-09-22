@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import styled from 'styled-components';
 import 'react-grid-layout/css/styles.css';
@@ -19,14 +19,55 @@ const App = () => {
     { i: 'widget2', x: 2, y: 0, w: 2, h: 2 },
     { i: 'widget3', x: 4, y: 0, w: 2, h: 2 },
   ]);
+  const [layouts, setLayouts] = useState({});
+  const [currentProfile, setCurrentProfile] = useState('default');
+
+  useEffect(() => {
+    const savedLayouts = localStorage.getItem('savedLayouts');
+    if (savedLayouts) {
+      setLayouts(JSON.parse(savedLayouts));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('savedLayouts', JSON.stringify(layouts));
+  }, [layouts]);
 
   const onLayoutChange = (newLayout) => {
     setLayout(newLayout);
+    setLayouts(prevLayouts => ({
+      ...prevLayouts,
+      [currentProfile]: newLayout
+    }));
+  };
+
+  const saveLayout = () => {
+    const profileName = prompt('Enter a name for this layout profile:');
+    if (profileName) {
+      setLayouts(prevLayouts => ({
+        ...prevLayouts,
+        [profileName]: layout
+      }));
+      setCurrentProfile(profileName);
+    }
+  };
+
+  const loadLayout = (profileName) => {
+    if (layouts[profileName]) {
+      setLayout(layouts[profileName]);
+      setCurrentProfile(profileName);
+    }
   };
 
   return (
     <div className="App">
       <h1>React Dashboard</h1>
+      <select value={currentProfile} onChange={(e) => loadLayout(e.target.value)}>
+        {Object.keys(layouts).map(profile => (
+          <option key={profile} value={profile}>{profile}</option>
+        ))}
+      </select>
+      <button onClick={saveLayout}>Save Current Layout</button>
       <ResponsiveGridLayout
         className="layout"
         layouts={{ lg: layout }}
